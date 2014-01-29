@@ -24,19 +24,23 @@ class AbstractObject(object):
         """
         data = self.__create_object_meta(self)
         for key in self.attributes:
-            value = self.__get_data(key)
+            value = self.__get_value(key)
             if hasattr(self, 'schema') and \
-                    key in self.schema and \
-                    issubclass(self.schema[key], AbstractObject):
-                serialized_value = hasattr(value, 'serialize') and \
-                    value.serialize(**kwargs) or None
-                if not serialized_value:
-                    item_class = self.schema[key]
-                    structured_data = self.__create_object_meta(
-                        item_class, serialized_value)
-                    item_dict = {key: structured_data}
+                    key in self.schema:
+                if issubclass(self.schema[key], AbstractObject):
+                    serialized_value = hasattr(value, 'serialize') and \
+                        value.serialize(**kwargs) or None
+                    if not serialized_value:
+                        item_class = self.schema[key]
+                        structured_data = self.__create_object_meta(
+                            item_class, serialized_value)
+                        item_dict = {key: structured_data}
+                    else:
+                        item_dict = {key: serialized_value}
                 else:
-                    item_dict = {key: serialized_value}
+                    data_type = self.schema[key]
+                    value = value and data_type(value) or data_type()
+                    item_dict = {key: value}
             else:
                 item_dict = {key: value}
             data['data'].update(item_dict)
@@ -86,9 +90,9 @@ class AbstractObject(object):
         for key, value in data['data'].items():
             if self.__is_object_meta(value):
                 obj = load_class(value['object_type'])
-                self.__set_data(key, obj(**value['data']))
+                self.__set_value(key, obj(**value['data']))
             else:
-                self.__set_data(key, value)
+                self.__set_value(key, value)
 
     def to_hash(self, **kwargs):
         """
@@ -109,11 +113,11 @@ class AbstractObject(object):
             :param kwargs: object members as keyword arguments.
         """
         self.__data = {}
-        if kwargs:
-            for key, value in kwargs.items():
-                self.__set_data(key, value)
+        if hasattr(self, 'defaults'):
+            self.__set_data(**self.defaults)
+        self.__set_data(**kwargs)
 
-    def __set_data(self, key, value):
+    def __set_value(self, key, value):
         """
         set a value to attribute of the object.
 
@@ -132,7 +136,7 @@ class AbstractObject(object):
         self.__data.update({key: value})
         return self
 
-    def __get_data(self, key):
+    def __get_value(self, key):
         """
         get value from attribute of the object.
 
@@ -144,6 +148,19 @@ class AbstractObject(object):
             raise KeyError('%s is not a member of the object.' % key)
         data = self.__data.get(key)
         return data
+
+    def __set_data(self, **kwargs):
+        """
+        set data to object from the specified keyword
+        arguments as bulk.
+
+        arguments:
+            :param kwargs: attribute-value pairs.
+        """
+        if kwargs:
+            for key, value in kwargs.items():
+                self.__set_value(key, value)
+        return self
 
     def __get_action(self, name):
         """
@@ -193,11 +210,10 @@ class AbstractObject(object):
             action = self.__get_action(name)
             attribute = self.__get_attribute_name(name)
             if action == self.GET_ACTION_KEY:
-                callback = self.__get_data
+                callback = self.__get_value
             elif action == self.SET_ACTION_KEY:
-                callback = self.__set_data
+                callback = self.__set_value
             else:
                 raise AttributeError(
                     '%s is not a member of the object.' % name)
             return self.__dispatch(callback, action, attribute)
-
