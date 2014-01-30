@@ -31,8 +31,8 @@ serialized contains now:
 
 {'data': {'order_id': 'OR0000001',
   'payment': {'data': {'amount': 100, 'transaction_id': 'TR000002'},
-   'object_type': '__main__.PaymentObject'}},
- 'object_type': '__main__.OrderObject'}
+   'object_type': 'app.stores.PaymentObject'}},
+ 'object_type': 'app.stores.OrderObject'}
 """
 
 ```
