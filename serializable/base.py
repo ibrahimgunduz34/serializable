@@ -28,15 +28,8 @@ class AbstractObject(object):
             if hasattr(self, 'schema') and \
                     key in self.schema:
                 if issubclass(self.schema[key], AbstractObject):
-                    serialized_value = hasattr(value, 'serialize') and \
-                        value.serialize(**kwargs) or None
-                    if not serialized_value:
-                        item_class = self.schema[key]
-                        structured_data = self.__create_object_meta(
-                            item_class, serialized_value)
-                        item_dict = {key: structured_data}
-                    else:
-                        item_dict = {key: serialized_value}
+                    serialized_value = value.serialize(**kwargs)
+                    item_dict = {key: serialized_value}
                 else:
                     data_type = self.schema[key]
                     value = value and data_type(value) or data_type()
@@ -113,6 +106,9 @@ class AbstractObject(object):
             :param kwargs: object members as keyword arguments.
         """
         self.__data = {}
+        if hasattr(self, 'schema'):
+            for key, value in self.schema.items():
+                self.__set_value(key, value())
         if hasattr(self, 'defaults'):
             self.__set_data(**self.defaults)
         self.__set_data(**kwargs)
