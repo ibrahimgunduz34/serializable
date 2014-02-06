@@ -82,10 +82,11 @@ class AbstractObject(object):
                 object_type)
         for key, value in data['data'].items():
             if self.__is_object_meta(value):
-                obj = load_class(value['object_type'])
-                self.__set_value(key, obj(**value['data']))
+                obj = load_class(value['object_type'])()
+                self.__set_value(key, obj.deserialize(value))
             else:
                 self.__set_value(key, value)
+        return self
 
     def to_hash(self, **kwargs):
         """
