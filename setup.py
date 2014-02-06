@@ -8,6 +8,6 @@ package_idr = os.path.normpath(
 setup(
     name='serializable',
     packages=find_packages(package_idr),
-    version="1.1.2",
+    version="1.1.3",
     author="ibrahimgunduz34",
     author_email="ibrahimgunduz34@gmail.com")
